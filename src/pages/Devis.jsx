@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ClientForm from '../components/ClientForm'
+import EntrepriseForm from '../components/EntrepriseForm'
 import PrestationForm from '../components/PrestationForm'
 import DevisPreview from '../components/DevisPreview'
 import './Devis.css'
@@ -12,6 +13,13 @@ function Devis() {
     nom: '',
     email: '',
     adresse: ''
+  })
+
+  const [entreprise, setEntreprise] = useState({
+    nom: '',
+    email: '',
+    adresse: '',
+    logo: null
   })
 
   const [prestations, setPrestations] = useState([
@@ -34,9 +42,10 @@ function Devis() {
           <span className="numero-label">N° de devis</span>
           <span className="numero-value">{numero}</span>
         </div>
+        <EntrepriseForm entreprise={entreprise} setEntreprise={setEntreprise} />
         <ClientForm client={client} setClient={setClient} />
         <PrestationForm prestations={prestations} setPrestations={setPrestations} />
-        <DevisPreview client={client} prestations={prestations} numero={numero} />
+        <DevisPreview client={client} entreprise={entreprise} prestations={prestations} numero={numero} />
       </div>
     </div>
   )
