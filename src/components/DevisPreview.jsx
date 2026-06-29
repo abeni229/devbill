@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react'
+import SignatureCanvas from 'react-signature-canvas'
 
 function DevisPreview({ client, entreprise, prestations, numero }) {
   const previewRef = useRef()
   const [tvaActive, setTvaActive] = useState(false)
   const [tauxTva, setTauxTva] = useState(18)
   const [erreur, setErreur] = useState('')
-  const [signature, setSignature] = useState('')
+  const sigRef = useRef(null)
 
   const sousTotal = prestations.reduce((acc, p) => {
     return acc + Number(p.quantite) * Number(p.prixUnitaire)
@@ -104,11 +105,11 @@ function DevisPreview({ client, entreprise, prestations, numero }) {
           <div class="total-final"><span>Total</span><span>${total.toLocaleString()} FCFA</span></div>
         </div>
 
-        ${signature ? `
+       ${sigRef.current && !sigRef.current.isEmpty() ? `
         <div class="signature-section">
-          <div class="signature-box">
+          <div>
             <div class="signature-label">Signature</div>
-            <div class="signature-text">${signature}</div>
+            <img src="${sigRef.current.toDataURL()}" style="max-width:200px;max-height:80px;" />
           </div>
         </div>` : ''}
 
@@ -205,15 +206,20 @@ function DevisPreview({ client, entreprise, prestations, numero }) {
           </div>
         </div>
 
-        <div className="signature-wrap">
+              <div className="signature-wrap">
           <p className="signature-label-text">Signature de l'entreprise</p>
-          <input
-            type="text"
-            className="signature-input"
-            placeholder="Tapez votre nom ou signature..."
-            value={signature}
-            onChange={(e) => setSignature(e.target.value)}
-          />
+          <div className="signature-canvas-wrap">
+            <SignatureCanvas
+              ref={sigRef}
+              penColor="#e8d5a3"
+              canvasProps={{ className: 'signature-canvas' }}
+            />
+          </div>
+          <div className="signature-btns">
+            <button className="btn-clear-sig" onClick={() => sigRef.current.clear()}>
+              Effacer
+            </button>
+          </div>
         </div>
 
       </div>

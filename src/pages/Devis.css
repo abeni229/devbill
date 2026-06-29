@@ -434,3 +434,38 @@
     text-align: left;
   }
 }
+
+.signature-canvas-wrap {
+  border: 0.5px solid #3a3020;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #2a2010;
+  margin-bottom: 8px;
+}
+
+.signature-canvas {
+  width: 100% !important;
+  height: 120px !important;
+}
+
+.signature-btns {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-clear-sig {
+  background: transparent;
+  border: 0.5px solid #3a3020;
+  color: #9a8a6a;
+  padding: 6px 16px;
+  font-size: 11px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-clear-sig:hover {
+  background: #1a1209;
+  color: #e8d5a3;
+}
