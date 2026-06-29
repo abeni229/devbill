@@ -140,7 +140,7 @@ function DevisPreview({ client, entreprise, prestations, numero }) {
 
       <div ref={previewRef} style={{ padding: '1rem' }}>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+        <div className="preview-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
           <div>
             <p style={{ fontSize: '10px', color: '#9a8a6a', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '6px' }}>Émetteur</p>
             <p style={{ fontSize: '14px', color: '#e8d5a3', marginBottom: '4px' }}>{entreprise.nom || '—'}</p>

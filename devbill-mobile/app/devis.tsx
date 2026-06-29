@@ -1,29 +1,20 @@
+import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
-import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
 
 export default function DevisScreen() {
   const router = useRouter()
 
-  const [client, setClient] = useState({
-    nom: '',
-    email: '',
-    adresse: '',
-  })
-
-  const [prestations, setPrestations] = useState([
-    { description: '', quantite: '1', prixUnitaire: '0' }
-  ])
-
+  const [client, setClient] = useState({ nom: '', email: '', adresse: '' })
+  const [entreprise, setEntreprise] = useState({ nom: '', email: '', adresse: '', logo: null as string | null })
+  const [signature, setSignature] = useState('')
+  const [prestations, setPrestations] = useState([{ description: '', quantite: '1', prixUnitaire: '0' }])
   const [tvaActive, setTvaActive] = useState(false)
   const [tauxTva, setTauxTva] = useState('18')
 
-  const sousTotal = prestations.reduce((acc, p) => {
-    return acc + Number(p.quantite) * Number(p.prixUnitaire)
-  }, 0)
-
+  const sousTotal = prestations.reduce((acc, p) => acc + Number(p.quantite) * Number(p.prixUnitaire), 0)
   const tva = tvaActive ? sousTotal * (Number(tauxTva) / 100) : 0
   const total = sousTotal + tva
 
@@ -42,82 +33,98 @@ export default function DevisScreen() {
   }
 
 async function exportPDF() {
-  if (!client.nom.trim()) {
-    alert('Le nom du client est obligatoire.')
-    return
-  }
-  if (!client.email.trim()) {
-    alert("L'email du client est obligatoire.")
-    return
-  }
-  const lignes = prestations.map(p => `
+  if (!client.nom.trim()) { alert('Le nom du client est obligatoire.'); return }
+  if (!client.email.trim()) { alert("L'email du client est obligatoire."); return }
+  
+  const logoBase64 = entreprise.logo || ''
+
+const lignes = prestations.map(p => `
     <tr>
       <td>${p.description || '—'}</td>
-      <td>${p.quantite}</td>
-      <td>${Number(p.prixUnitaire).toLocaleString()} FCFA</td>
-      <td>${(Number(p.quantite) * Number(p.prixUnitaire)).toLocaleString()} FCFA</td>
+      <td style="text-align:center;">${p.quantite}</td>
+      <td style="text-align:right;">${Number(p.prixUnitaire).toLocaleString()} FCFA</td>
+      <td style="text-align:right;">${(Number(p.quantite) * Number(p.prixUnitaire)).toLocaleString()} FCFA</td>
     </tr>
   `).join('')
 
-  const html = `
-    <html>
-    <head>
-      <style>
-        body { font-family: Georgia, serif; padding: 40px; color: #1a1209; background: #f5f0e8; }
-        h1 { font-size: 32px; letter-spacing: 4px; margin-bottom: 4px; }
-        .badge { font-size: 11px; color: #9a8a6a; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 32px; }
-        .section { margin-bottom: 24px; }
-        .label { font-size: 10px; color: #9a8a6a; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
-        .value { font-size: 14px; margin-bottom: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th { font-size: 10px; color: #9a8a6a; letter-spacing: 2px; text-transform: uppercase; padding: 8px 0; border-bottom: 1px solid #d4c8a8; text-align: left; }
-        td { font-size: 13px; padding: 10px 0; border-bottom: 1px solid #ede8da; }
-        .totaux { margin-top: 24px; border-top: 1px solid #d4c8a8; padding-top: 16px; }
-        .total-row { display: flex; justify-content: space-between; font-size: 13px; color: #9a8a6a; margin-bottom: 8px; }
-        .total-final { display: flex; justify-content: space-between; font-size: 22px; border-top: 1px solid #d4c8a8; padding-top: 12px; margin-top: 8px; }
-        .footer { margin-top: 48px; font-size: 11px; color: #9a8a6a; letter-spacing: 2px; text-align: center; text-transform: uppercase; }
-      </style>
-    </head>
-    <body>
-      <h1>DevBill</h1>
-      <div class="badge">Générateur de devis freelance — Rouky Dev</div>
+    const html = `
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Georgia, serif; padding: 48px; color: #111; background: #fff; font-size: 13px; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #ddd; }
+          .info-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 6px; }
+          .info-name { font-size: 16px; font-weight: bold; color: #111; margin-bottom: 4px; }
+          .info-detail { font-size: 12px; color: #444; line-height: 1.6; }
+          .logo-wrap { text-align: center; }
+          .logo-wrap img { max-height: 80px; max-width: 180px; object-fit: contain; }
+          .numero { font-size: 11px; letter-spacing: 2px; color: #888; text-transform: uppercase; margin-bottom: 24px; }
+          table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; }
+          th { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #888; padding: 10px 0; border-bottom: 1px solid #ddd; text-align: left; }
+          th:nth-child(2) { text-align: center; }
+          th:nth-child(3), th:nth-child(4) { text-align: right; }
+          td { padding: 10px 0; border-bottom: 1px solid #eee; color: #111; }
+          .totaux { margin-left: auto; width: 280px; }
+          .total-row { display: flex; justify-content: space-between; font-size: 13px; color: #888; margin-bottom: 6px; }
+          .total-final { display: flex; justify-content: space-between; font-size: 20px; border-top: 1px solid #ddd; padding-top: 12px; margin-top: 8px; color: #111; font-weight: bold; }
+          .signature-section { margin-top: 60px; display: flex; justify-content: flex-end; }
+          .signature-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 12px; }
+          .signature-text { font-size: 22px; color: #111; border-bottom: 1px solid #111; padding-bottom: 4px; min-width: 200px; }
+          .footer { margin-top: 40px; text-align: center; font-size: 10px; color: #aaa; letter-spacing: 2px; text-transform: uppercase; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="info-label">Émetteur</div>
+            <div class="info-name">${entreprise.nom || '—'}</div>
+            <div class="info-detail">${entreprise.email || ''}</div>
+            <div class="info-detail">${entreprise.adresse || ''}</div>
+          </div>
+         ${logoBase64 ? `<div class="logo-wrap"><img src="${logoBase64}"/></div>` : ''}
+          <div style="text-align:right;">
+            <div class="info-label">Client</div>
+            <div class="info-name">${client.nom}</div>
+            <div class="info-detail">${client.email}</div>
+            <div class="info-detail">${client.adresse || ''}</div>
+          </div>
+        </div>
 
-      <div class="section">
-        <div class="label">Client</div>
-        <div class="value">${client.nom}</div>
-        <div class="value">${client.email}</div>
-        <div class="value">${client.adresse || ''}</div>
-      </div>
-
-      <div class="section">
-        <div class="label">Prestations</div>
         <table>
           <thead>
             <tr>
               <th>Description</th>
-              <th>Qté</th>
-              <th>Prix unitaire</th>
-              <th>Total</th>
+              <th style="text-align:center;">Qté</th>
+              <th style="text-align:right;">Prix unitaire</th>
+              <th style="text-align:right;">Total</th>
             </tr>
           </thead>
           <tbody>${lignes}</tbody>
         </table>
-      </div>
 
-      <div class="totaux">
-        <div class="total-row"><span>Sous-total</span><span>${sousTotal.toLocaleString()} FCFA</span></div>
-        ${tvaActive ? `<div class="total-row"><span>TVA (${tauxTva}%)</span><span>${tva.toLocaleString()} FCFA</span></div>` : ''}
-        <div class="total-final"><span>Total</span><span>${total.toLocaleString()} FCFA</span></div>
-      </div>
+        <div class="totaux">
+          <div class="total-row"><span>Sous-total</span><span>${sousTotal.toLocaleString()} FCFA</span></div>
+          ${tvaActive ? `<div class="total-row"><span>TVA (${tauxTva}%)</span><span>${tva.toLocaleString()} FCFA</span></div>` : ''}
+          <div class="total-final"><span>Total</span><span>${total.toLocaleString()} FCFA</span></div>
+        </div>
 
-      <div class="footer">DevBill — devbill-five.vercel.app</div>
-    </body>
-    </html>
-  `
+        ${signature ? `
+        <div class="signature-section">
+          <div>
+            <div class="signature-label">Signature</div>
+            <div class="signature-text">${signature}</div>
+          </div>
+        </div>` : ''}
 
-  const { uri } = await Print.printToFileAsync({ html })
-  await Sharing.shareAsync(uri, { mimeType: 'application/pdf' })
-}
+        <div class="footer">DevBill — devbill-five.vercel.app</div>
+      </body>
+      </html>
+    `
+
+    const { uri } = await Print.printToFileAsync({ html })
+    await Sharing.shareAsync(uri, { mimeType: 'application/pdf' })
+  }
 
   return (
     <ScrollView style={styles.page} contentContainerStyle={styles.content}>
@@ -130,31 +137,35 @@ async function exportPDF() {
         </TouchableOpacity>
       </View>
 
+      {/* Entreprise */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>VOTRE ENTREPRISE</Text>
+        <TextInput style={styles.input} placeholder="Nom de l'entreprise" placeholderTextColor="#b0a08a" value={entreprise.nom} onChangeText={(v) => setEntreprise({ ...entreprise, nom: v })} />
+        <TextInput style={styles.input} placeholder="Email de l'entreprise" placeholderTextColor="#b0a08a" value={entreprise.email} onChangeText={(v) => setEntreprise({ ...entreprise, email: v })} keyboardType="email-address" />
+        <TextInput style={styles.input} placeholder="Adresse de l'entreprise" placeholderTextColor="#b0a08a" value={entreprise.adresse} onChangeText={(v) => setEntreprise({ ...entreprise, adresse: v })} />
+       <TouchableOpacity style={styles.btnLogo} onPress={async () => {
+        const result = await import('expo-image-picker').then(m => m.launchImageLibraryAsync({ 
+          mediaTypes: 'Images', 
+          quality: 0.8,
+          base64: true
+        }))
+        if (!result.canceled) {
+          const asset = result.assets[0]
+          const base64Uri = `data:image/jpeg;base64,${asset.base64}`
+          setEntreprise({ ...entreprise, logo: base64Uri })
+        }
+      }}>
+          <Text style={styles.btnLogoText}>{entreprise.logo ? '✓ Logo importé' : '+ IMPORTER UN LOGO (OPTIONNEL)'}</Text>
+        </TouchableOpacity>
+        {entreprise.logo && <Image source={{ uri: entreprise.logo }} style={styles.logoPreview} resizeMode="contain" />}
+      </View>
+
       {/* Client */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>INFORMATIONS CLIENT</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Nom du client"
-          placeholderTextColor="#b0a08a"
-          value={client.nom}
-          onChangeText={(v) => setClient({ ...client, nom: v })}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#b0a08a"
-          value={client.email}
-          onChangeText={(v) => setClient({ ...client, email: v })}
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Adresse"
-          placeholderTextColor="#b0a08a"
-          value={client.adresse}
-          onChangeText={(v) => setClient({ ...client, adresse: v })}
-        />
+        <TextInput style={styles.input} placeholder="Nom du client" placeholderTextColor="#b0a08a" value={client.nom} onChangeText={(v) => setClient({ ...client, nom: v })} />
+        <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#b0a08a" value={client.email} onChangeText={(v) => setClient({ ...client, email: v })} keyboardType="email-address" />
+        <TextInput style={styles.input} placeholder="Adresse" placeholderTextColor="#b0a08a" value={client.adresse} onChangeText={(v) => setClient({ ...client, adresse: v })} />
       </View>
 
       {/* Prestations */}
@@ -162,30 +173,10 @@ async function exportPDF() {
         <Text style={styles.cardTitle}>PRESTATIONS</Text>
         {prestations.map((p, index) => (
           <View key={index} style={styles.prestationRow}>
-            <TextInput
-              style={[styles.input, { flex: 2 }]}
-              placeholder="Description"
-              placeholderTextColor="#b0a08a"
-              value={p.description}
-              onChangeText={(v) => updatePrestation(index, 'description', v)}
-            />
+            <TextInput style={[styles.input, { flex: 2 }]} placeholder="Description" placeholderTextColor="#b0a08a" value={p.description} onChangeText={(v) => updatePrestation(index, 'description', v)} />
             <View style={styles.prestationMeta}>
-              <TextInput
-                style={[styles.input, styles.inputSmall]}
-                placeholder="Qté"
-                placeholderTextColor="#b0a08a"
-                value={p.quantite}
-                onChangeText={(v) => updatePrestation(index, 'quantite', v)}
-                keyboardType="numeric"
-              />
-              <TextInput
-                style={[styles.input, styles.inputSmall]}
-                placeholder="Prix"
-                placeholderTextColor="#b0a08a"
-                value={p.prixUnitaire}
-                onChangeText={(v) => updatePrestation(index, 'prixUnitaire', v)}
-                keyboardType="numeric"
-              />
+              <TextInput style={[styles.input, styles.inputSmall]} placeholder="Qté" placeholderTextColor="#b0a08a" value={p.quantite} onChangeText={(v) => updatePrestation(index, 'quantite', v)} keyboardType="numeric" />
+              <TextInput style={[styles.input, styles.inputSmall]} placeholder="Prix" placeholderTextColor="#b0a08a" value={p.prixUnitaire} onChangeText={(v) => updatePrestation(index, 'prixUnitaire', v)} keyboardType="numeric" />
               <TouchableOpacity onPress={() => supprimerPrestation(index)} style={styles.btnSupprimer}>
                 <Text style={styles.btnSupprimerText}>✕</Text>
               </TouchableOpacity>
@@ -201,10 +192,24 @@ async function exportPDF() {
       <View style={styles.previewCard}>
         <Text style={styles.previewTitle}>APERÇU DU DEVIS</Text>
 
-        <Text style={styles.previewLabel}>CLIENT</Text>
-        <Text style={styles.previewValue}>{client.nom || '—'}</Text>
-        <Text style={styles.previewValue}>{client.email || '—'}</Text>
-        <Text style={styles.previewValue}>{client.adresse || '—'}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+          <View>
+            <Text style={styles.previewLabel}>ÉMETTEUR</Text>
+            <Text style={styles.previewValue}>{entreprise.nom || '—'}</Text>
+            <Text style={styles.previewValue}>{entreprise.email || ''}</Text>
+            <Text style={styles.previewValue}>{entreprise.adresse || ''}</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.previewLabel}>CLIENT</Text>
+            <Text style={styles.previewValue}>{client.nom || '—'}</Text>
+            <Text style={styles.previewValue}>{client.email || ''}</Text>
+            <Text style={styles.previewValue}>{client.adresse || ''}</Text>
+          </View>
+        </View>
+
+        {entreprise.logo && (
+          <Image source={{ uri: entreprise.logo }} style={{ height: 50, width: '100%', marginBottom: 12 }} resizeMode="contain" />
+        )}
 
         <View style={styles.separator} />
 
@@ -223,7 +228,6 @@ async function exportPDF() {
           <Text style={styles.totalValue}>{sousTotal.toLocaleString()} FCFA</Text>
         </View>
 
-        {/* TVA */}
         <TouchableOpacity onPress={() => setTvaActive(!tvaActive)} style={styles.tvaToggle}>
           <View style={[styles.checkbox, tvaActive && styles.checkboxActive]} />
           <Text style={styles.tvaLabel}>Appliquer la TVA</Text>
@@ -231,12 +235,7 @@ async function exportPDF() {
 
         {tvaActive && (
           <View style={styles.tvaRow}>
-            <TextInput
-              style={styles.tvaInput}
-              value={tauxTva}
-              onChangeText={setTauxTva}
-              keyboardType="numeric"
-            />
+            <TextInput style={styles.tvaInput} value={tauxTva} onChangeText={setTauxTva} keyboardType="numeric" />
             <Text style={styles.tvaLabel}>% → {tva.toLocaleString()} FCFA</Text>
           </View>
         )}
@@ -244,6 +243,12 @@ async function exportPDF() {
         <View style={styles.totalFinal}>
           <Text style={styles.totalFinalLabel}>Total</Text>
           <Text style={styles.totalFinalValue}>{total.toLocaleString()} FCFA</Text>
+        </View>
+
+        {/* Signature */}
+        <View style={styles.signatureWrap}>
+          <Text style={styles.signatureLabel}>SIGNATURE DE L'ENTREPRISE</Text>
+          <TextInput style={styles.signatureInput} placeholder="Tapez votre nom ou signature..." placeholderTextColor="#9a8a6a" value={signature} onChangeText={setSignature} />
         </View>
 
         <TouchableOpacity style={styles.btnPdf} onPress={exportPDF}>
@@ -258,99 +263,44 @@ async function exportPDF() {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: '#f5f0e8' },
   content: { padding: 20, paddingBottom: 40 },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    paddingTop: 40,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#d4c8a8',
-    paddingBottom: 16,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, paddingTop: 40, borderBottomWidth: 0.5, borderBottomColor: '#d4c8a8', paddingBottom: 16 },
   logo: { fontFamily: 'serif', fontSize: 22, color: '#1a1209', letterSpacing: 2 },
   btnRetour: { borderWidth: 0.5, borderColor: '#d4c8a8', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 4 },
   btnRetourText: { fontSize: 12, color: '#6b5e45', letterSpacing: 1 },
-
-  card: {
-    backgroundColor: '#faf7f2',
-    borderWidth: 0.5,
-    borderColor: '#d4c8a8',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 11,
-    color: '#1a1209',
-    letterSpacing: 2,
-    marginBottom: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#d4c8a8',
-    paddingBottom: 8,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 0.5,
-    borderColor: '#d4c8a8',
-    borderRadius: 4,
-    padding: 12,
-    fontSize: 14,
-    color: '#1a1209',
-    marginBottom: 10,
-  },
+  card: { backgroundColor: '#faf7f2', borderWidth: 0.5, borderColor: '#d4c8a8', borderRadius: 8, padding: 16, marginBottom: 16 },
+  cardTitle: { fontSize: 11, color: '#1a1209', letterSpacing: 2, marginBottom: 12, borderBottomWidth: 0.5, borderBottomColor: '#d4c8a8', paddingBottom: 8 },
+  input: { backgroundColor: '#fff', borderWidth: 0.5, borderColor: '#d4c8a8', borderRadius: 4, padding: 12, fontSize: 14, color: '#1a1209', marginBottom: 10 },
   inputSmall: { flex: 1, marginLeft: 8 },
-
   prestationRow: { marginBottom: 8 },
   prestationMeta: { flexDirection: 'row', alignItems: 'center' },
-
-  btnSupprimer: {
-    marginLeft: 8,
-    borderWidth: 0.5,
-    borderColor: '#d4c8a8',
-    borderRadius: 4,
-    padding: 12,
-  },
+  btnSupprimer: { marginLeft: 8, borderWidth: 0.5, borderColor: '#d4c8a8', borderRadius: 4, padding: 12 },
   btnSupprimerText: { fontSize: 13, color: '#9a8a6a' },
-
-  btnAjouter: {
-    borderWidth: 0.5,
-    borderColor: '#c9a96e',
-    borderRadius: 4,
-    padding: 12,
-    alignItems: 'center',
-    marginTop: 4,
-  },
+  btnAjouter: { borderWidth: 0.5, borderColor: '#c9a96e', borderRadius: 4, padding: 12, alignItems: 'center', marginTop: 4 },
   btnAjouterText: { fontSize: 11, color: '#c9a96e', letterSpacing: 2 },
-
-  previewCard: {
-    backgroundColor: '#1a1209',
-    borderRadius: 8,
-    padding: 20,
-    marginBottom: 16,
-  },
+  btnLogo: { borderWidth: 0.5, borderColor: '#c9a96e', borderRadius: 4, padding: 12, alignItems: 'center', marginBottom: 10 },
+  btnLogoText: { fontSize: 11, color: '#c9a96e', letterSpacing: 2 },
+  logoPreview: { width: '100%', height: 80, borderRadius: 4, borderWidth: 0.5, borderColor: '#d4c8a8', backgroundColor: '#fff', marginBottom: 10 },
+  previewCard: { backgroundColor: '#1a1209', borderRadius: 8, padding: 20, marginBottom: 16 },
   previewTitle: { fontSize: 11, color: '#e8d5a3', letterSpacing: 2, marginBottom: 16, borderBottomWidth: 0.5, borderBottomColor: '#3a3020', paddingBottom: 8 },
-  previewLabel: { fontSize: 10, color: '#9a8a6a', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4, marginTop: 12 },
+  previewLabel: { fontSize: 10, color: '#9a8a6a', letterSpacing: 2, marginBottom: 4, marginTop: 12 },
   previewValue: { fontSize: 13, color: '#e8d5a3', marginBottom: 2 },
   separator: { height: 0.5, backgroundColor: '#3a3020', marginVertical: 12 },
   previewRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   totalLabel: { fontSize: 13, color: '#9a8a6a' },
   totalValue: { fontSize: 13, color: '#9a8a6a' },
-
   tvaToggle: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   checkbox: { width: 16, height: 16, borderWidth: 1, borderColor: '#c9a96e', borderRadius: 3, marginRight: 8 },
   checkboxActive: { backgroundColor: '#c9a96e' },
   tvaLabel: { fontSize: 13, color: '#9a8a6a' },
   tvaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   tvaInput: { backgroundColor: '#2a2010', borderWidth: 0.5, borderColor: '#3a3020', borderRadius: 4, padding: 6, color: '#e8d5a3', width: 50, textAlign: 'center', fontSize: 13 },
-
   totalFinal: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0.5, borderTopColor: '#3a3020', paddingTop: 12, marginTop: 8 },
   totalFinalLabel: { fontFamily: 'serif', fontSize: 20, color: '#e8d5a3' },
   totalFinalValue: { fontFamily: 'serif', fontSize: 20, color: '#e8d5a3' },
-
+  signatureWrap: { marginTop: 16, paddingTop: 16, borderTopWidth: 0.5, borderTopColor: '#3a3020' },
+  signatureLabel: { fontSize: 10, color: '#9a8a6a', letterSpacing: 2, marginBottom: 8 },
+  signatureInput: { backgroundColor: '#2a2010', borderWidth: 0.5, borderColor: '#3a3020', borderRadius: 4, padding: 12, fontSize: 18, color: '#e8d5a3', fontStyle: 'italic' },
   btnPdf: { backgroundColor: '#c9a96e', borderRadius: 4, padding: 14, alignItems: 'center', marginTop: 16 },
   btnPdfText: { color: '#1a1209', fontSize: 12, letterSpacing: 2 },
 })

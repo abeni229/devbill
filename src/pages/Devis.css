@@ -423,3 +423,14 @@
 .signature-input:focus {
   border-color: #c9a96e;
 }
+
+@media (max-width: 600px) {
+  .preview-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .preview-header > div:last-child {
+    text-align: left;
+  }
+}
